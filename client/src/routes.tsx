@@ -41,6 +41,7 @@ export const router = createBrowserRouter([
       { path: "items/:id", element: <ItemDetails /> },
       { path: "add-item", element: <Protected><AddItem /></Protected> },
       { path: "my-products", element: <Protected><MyProducts /></Protected> },
+      { path: "items/:id/edit", element: <Protected><AddItem /></Protected> },
       { path: "requests", element: <Protected><Requests /></Protected> },
       { path: "cart", element: <Protected><Cart /></Protected> },
       { path: "checkout", element: <Protected><Checkout /></Protected> },
