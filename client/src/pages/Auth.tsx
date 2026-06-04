@@ -28,10 +28,15 @@ export function Auth({ mode }: { mode: "login" | "register" | "forgot" }) {
         const result = await register(v.name || "User", v.email, v.password);
         setPendingEmail(result.email);
         return;
-      } else if (mode === "login") await login(v.email, v.password);
+      } else if (mode === "login") {
+        await login(v.email, v.password);
+      }
       nav("/");
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Login failed. Check your email and password.");
+      const fallbackMessage = mode === "register"
+        ? "Registration failed. Check your details and try again."
+        : "Login failed. Check your email and password.";
+      toast.error(error.response?.data?.message || error.message || fallbackMessage);
     }
   };
   const submitOtp = async (v: OtpForm) => {
@@ -39,7 +44,7 @@ export function Auth({ mode }: { mode: "login" | "register" | "forgot" }) {
       await verifyOtp(pendingEmail, v.otp);
       nav("/");
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Invalid verification code.");
+      toast.error(error.response?.data?.message || error.message || "Invalid verification code.");
     }
   };
   return <div className="grid min-h-screen place-items-center bg-[linear-gradient(115deg,#f7f3ff_0%,#ffffff_45%,#e6f8fb_100%)] px-4">

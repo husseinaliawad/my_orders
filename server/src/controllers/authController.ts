@@ -34,7 +34,10 @@ export async function register(req: AuthedRequest, res: Response) {
 export async function login(req: AuthedRequest, res: Response) {
   const { email, password } = req.body;
   const user = await User.findOne({ email });
-  if (!user || !(await (user as any).comparePassword(password))) {
+  if (!user) {
+    return res.status(404).json({ message: "Account not found" });
+  }
+  if (!(await (user as any).comparePassword(password))) {
     return res.status(401).json({ message: "Invalid credentials" });
   }
   if (user.isBlocked) return res.status(403).json({ message: "Account blocked" });

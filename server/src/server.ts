@@ -1,9 +1,9 @@
-import "dotenv/config";
+import dotenv from "dotenv";
 import cors from "cors";
 import express from "express";
 import morgan from "morgan";
-import path from "path";
 import { connectDB } from "./config/db.js";
+import { envPath, legacyUploadDir, uploadDir } from "./config/paths.js";
 import { adminRoutes } from "./routes/adminRoutes.js";
 import { authRoutes } from "./routes/authRoutes.js";
 import { cartRoutes } from "./routes/cartRoutes.js";
@@ -12,10 +12,25 @@ import { itemRoutes } from "./routes/itemRoutes.js";
 import { requestRoutes } from "./routes/requestRoutes.js";
 
 const app = express();
-app.use(cors({ origin: process.env.CLIENT_URL || "http://localhost:5173" }));
+dotenv.config({ path: envPath });
+const allowedOrigins = new Set((process.env.CLIENT_URL || "http://localhost:5173").split(",").map((origin) => origin.trim()).filter(Boolean));
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    try {
+      const url = new URL(origin);
+      const isDevHost = ["localhost", "127.0.0.1"].includes(url.hostname) || /^192\.168\.\d{1,3}\.\d{1,3}$/.test(url.hostname);
+      if (allowedOrigins.has(origin) || isDevHost) return callback(null, true);
+    } catch {
+      // Fall through to the CORS error below.
+    }
+    return callback(new Error(`Origin ${origin} is not allowed by CORS`));
+  }
+}));
 app.use(express.json());
 app.use(morgan("dev"));
-app.use("/uploads", express.static(path.join(process.cwd(), "src", "uploads")));
+app.use("/uploads", express.static(uploadDir));
+app.use("/uploads", express.static(legacyUploadDir));
 
 app.get("/", (_req, res) => {
   res.json({

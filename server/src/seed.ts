@@ -14,9 +14,9 @@ async function seed() {
   await Promise.all([User.deleteMany(), Category.deleteMany(), Item.deleteMany(), RentalRequest.deleteMany(), Cart.deleteMany()]);
 
   const [admin, maya, omar] = await User.create([
-    { name: "Admin", email: "admin@shareinstead.com", password: "password123", role: "admin", avatar: img("admin") },
-    { name: "Maya Haddad", email: "maya@example.com", password: "password123", avatar: img("maya") },
-    { name: "Omar Saleh", email: "omar@example.com", password: "password123", avatar: img("omar") }
+    { name: "Admin", email: "admin@shareinstead.com", password: "password123", role: "admin", avatar: img("admin"), isEmailVerified: true },
+    { name: "Maya Haddad", email: "maya@example.com", password: "password123", avatar: img("maya"), isEmailVerified: true },
+    { name: "Omar Saleh", email: "omar@example.com", password: "password123", avatar: img("omar"), isEmailVerified: true }
   ]);
 
   const categories = await Category.create([

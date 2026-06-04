@@ -1,7 +1,8 @@
 import { Check, Trash2, X } from "lucide-react";
-import { api, assetUrl } from "../../api/client";
+import { api } from "../../api/client";
 import { DataTable, type Column } from "../../components/DataTable";
 import { SectionHeader } from "../../components/SectionHeader";
+import { SmartImage } from "../../components/SmartImage";
 import { StatusBadge } from "../../components/StatusBadge";
 import { Button } from "../../components/ui/Button";
 import { useApi } from "../../hooks/useApi";
@@ -12,7 +13,7 @@ export function ManageItems() {
   const status = async (id: string, value: string) => { const { data: item } = await api.patch(`/admin/items/${id}/status`, { status: value }); setData((data || []).map((x) => x._id === id ? item : x)); };
   const del = async (id: string) => { await api.delete(`/admin/items/${id}`); setData((data || []).filter((x) => x._id !== id)); };
   const columns: Column<Item>[] = [
-    { key: "item", header: "Item", render: (item) => <div className="flex items-center gap-3"><img src={assetUrl(item.images?.[0])} className="h-12 w-14 rounded-xl object-cover" /><div><b>{item.title}</b><p className="text-xs text-slate-500">{item.owner?.name}</p></div></div>, sortValue: (i) => i.title },
+    { key: "item", header: "Item", render: (item) => <div className="flex items-center gap-3"><SmartImage src={item.images?.[0]} fallbackLabel={item.title} className="h-12 w-14 rounded-xl object-cover" /><div><b>{item.title}</b><p className="text-xs text-slate-500">{item.owner?.name}</p></div></div>, sortValue: (i) => i.title },
     { key: "price", header: "Price", render: (item) => <b>${item.pricePerDay}/day</b>, sortValue: (i) => i.pricePerDay },
     { key: "status", header: "Status", render: (item) => <StatusBadge status={item.status} /> }
   ];
