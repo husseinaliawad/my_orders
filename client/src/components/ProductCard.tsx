@@ -2,7 +2,6 @@ import { Heart, MapPin, Plus, ShieldCheck, Star } from "lucide-react";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
-import { useCart } from "../context/CartContext";
 import { useFavorites } from "../context/FavoritesContext";
 import type { Item } from "../types";
 import { SmartImage } from "./SmartImage";
@@ -11,7 +10,6 @@ import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
 
 export function ProductCard({ item, isFavorite = false, onCart, onFavorite }: { item: Item; isFavorite?: boolean; onCart?: (item: Item) => void; onFavorite?: (item: Item) => void }) {
-  const { syncCartCount } = useCart();
   const { isFavorite: isSavedFavorite, toggleFavorite } = useFavorites();
   const saved = isFavorite || isSavedFavorite(item._id);
 
@@ -22,11 +20,10 @@ export function ProductCard({ item, isFavorite = false, onCart, onFavorite }: { 
     }
 
     try {
-      const { data } = await api.post("/cart", { itemId: item._id, startDate: new Date().toISOString(), endDate: new Date(Date.now() + 86400000).toISOString() });
-      syncCartCount(data);
-      toast.success("Added to cart");
-    } catch {
-      toast.error("Please login to add items to cart");
+      await api.post("/requests", { item: item._id, startDate: new Date().toISOString(), endDate: new Date(Date.now() + 86400000).toISOString() });
+      toast.success("Rental request sent to owner");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Please login to request this item");
     }
   };
 
@@ -61,7 +58,7 @@ export function ProductCard({ item, isFavorite = false, onCart, onFavorite }: { 
       <div className="mb-2 flex items-start justify-between gap-3"><h3 className="line-clamp-2 text-base font-bold tracking-normal">{item.title}</h3><span className="whitespace-nowrap rounded-2xl bg-primary/10 px-3 py-1 text-sm font-bold text-primary">${item.pricePerDay}<span className="text-xs text-slate-500">/day</span></span></div>
       <div className="flex items-center justify-between text-sm text-slate-500"><span className="flex items-center gap-1"><MapPin size={15} />{item.location}</span><span className="flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 font-bold text-amber-600"><Star size={15} fill="currentColor" />{item.rating}</span></div>
       <div className="mt-3 flex items-center gap-2 text-sm text-slate-500"><SmartImage src={item.owner?.avatar} fallbackLabel={item.owner?.name || "User"} className="h-7 w-7 rounded-full object-cover" /><span>Listed by <span className="font-bold text-slate-800">{item.owner?.name}</span></span></div>
-      <div className="mt-5 grid grid-cols-2 gap-3"><Link to={`/items/${item._id}`} className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 font-semibold text-slate-800 shadow-sm transition hover:-translate-y-0.5">Details</Link><Button onClick={addToCart}><Plus size={16} />Cart</Button></div>
+      <div className="mt-5 grid grid-cols-2 gap-3"><Link to={`/items/${item._id}`} className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 font-semibold text-slate-800 shadow-sm transition hover:-translate-y-0.5">Details</Link><Button onClick={addToCart}><Plus size={16} />Request</Button></div>
     </div>
   </Card>;
 }

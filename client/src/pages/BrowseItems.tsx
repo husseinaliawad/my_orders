@@ -7,7 +7,6 @@ import { ProductCard } from "../components/ProductCard";
 import { SectionHeader } from "../components/SectionHeader";
 import { SidebarFilter, type FilterState } from "../components/SidebarFilter";
 import { Select } from "../components/ui/Select";
-import { useCart } from "../context/CartContext";
 import { useFavorites } from "../context/FavoritesContext";
 import { useApi } from "../hooks/useApi";
 import type { Category, Item } from "../types";
@@ -26,7 +25,6 @@ export function BrowseItems() {
     category: searchParams.get("category") || "",
     location: searchParams.get("location") || ""
   }));
-  const { syncCartCount } = useCart();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { data: categories } = useApi<Category[]>(() => api.get("/categories"), []);
   const { data, loading } = useApi<Item[]>(() => api.get(`/items?search=${filters.search}&category=${filters.category}&location=${filters.location}&minPrice=${filters.minPrice}&maxPrice=${filters.maxPrice}&rating=${filters.rating}&availability=${filters.availability}&sort=${sort}`), [sort, filters]);
@@ -58,7 +56,14 @@ export function BrowseItems() {
     setSearchParams({}, { replace: true });
   };
 
-  const add = async (item: Item) => { const { data } = await api.post("/cart", { itemId: item._id, startDate: new Date().toISOString(), endDate: new Date(Date.now() + 86400000).toISOString() }); syncCartCount(data); toast.success("Added to cart"); };
+  const add = async (item: Item) => {
+    try {
+      await api.post("/requests", { item: item._id, startDate: new Date().toISOString(), endDate: new Date(Date.now() + 86400000).toISOString() });
+      toast.success("Rental request sent to owner");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Please login to request this item");
+    }
+  };
   const favorite = (item: Item) => {
     const saved = toggleFavorite(item._id);
     toast.success(saved ? "Added to favorites" : "Removed from favorites");

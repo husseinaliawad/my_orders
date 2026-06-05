@@ -28,7 +28,31 @@ export async function outgoing(req: AuthedRequest, res: Response) {
 export async function createRequest(req: AuthedRequest, res: Response) {
   const item = await Item.findById(req.body.item);
   if (!item) return res.status(404).json({ message: "Item not found" });
-  const request = await RentalRequest.create({ ...req.body, renter: req.user._id, owner: item.owner });
+  if (String(item.owner) === String(req.user._id)) return res.status(400).json({ message: "You cannot request your own item" });
+
+  const startDate = new Date(req.body.startDate);
+  const endDate = new Date(req.body.endDate);
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime()) || endDate <= startDate) {
+    return res.status(400).json({ message: "Choose valid rental dates" });
+  }
+
+  const days = daysBetween(startDate, endDate);
+  const totalAmount = Math.round(days * item.pricePerDay * 1.1);
+  const existing = await RentalRequest.findOne({
+    item: item._id,
+    renter: req.user._id,
+    status: "pending"
+  });
+
+  if (existing) {
+    existing.startDate = startDate;
+    existing.endDate = endDate;
+    existing.totalAmount = totalAmount;
+    await existing.save();
+    return res.status(200).json(await existing.populate(populate));
+  }
+
+  const request = await RentalRequest.create({ item: item._id, renter: req.user._id, owner: item.owner, startDate, endDate, totalAmount, status: "pending" });
   res.status(201).json(await request.populate(populate));
 }
 
