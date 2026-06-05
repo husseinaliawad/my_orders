@@ -7,6 +7,7 @@ import { BrowseItems } from "./pages/BrowseItems";
 import { Cart } from "./pages/Cart";
 import { Checkout } from "./pages/Checkout";
 import { Home } from "./pages/Home";
+import { Favorites } from "./pages/Favorites";
 import { ItemDetails } from "./pages/ItemDetails";
 import { MyProducts } from "./pages/MyProducts";
 import { Profile } from "./pages/Profile";
@@ -45,7 +46,8 @@ export const router = createBrowserRouter([
       { path: "requests", element: <Protected><Requests /></Protected> },
       { path: "cart", element: <Protected><Cart /></Protected> },
       { path: "checkout", element: <Protected><Checkout /></Protected> },
-      { path: "profile", element: <Protected><Profile /></Protected> }
+      { path: "profile", element: <Protected><Profile /></Protected> },
+      { path: "favorites", element: <Protected><Favorites /></Protected> }
     ]
   },
   {

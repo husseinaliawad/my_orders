@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
+import { api } from "../api/client";
 import { FormField } from "../components/FormField";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
@@ -20,12 +21,18 @@ export function Auth({ mode }: { mode: "login" | "register" | "forgot" }) {
   const { login, register, verifyOtp } = useAuth();
   const nav = useNavigate();
   const [pendingEmail, setPendingEmail] = useState("");
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetOtp, setResetOtp] = useState("");
+  const [resetPassword, setResetPassword] = useState("");
+  const [resetSent, setResetSent] = useState(false);
+  const [resetSubmitting, setResetSubmitting] = useState(false);
   const { register: field, handleSubmit, formState: { errors, isSubmitting } } = useForm<Form>({ resolver: zodResolver(schema) });
-  const { register: otpField, handleSubmit: handleOtpSubmit, formState: { errors: otpErrors, isSubmitting: isVerifying } } = useForm<OtpForm>({ resolver: zodResolver(otpSchema) });
+  const { register: otpField, handleSubmit: handleOtpSubmit, reset: resetOtpForm, formState: { errors: otpErrors, isSubmitting: isVerifying } } = useForm<OtpForm>({ resolver: zodResolver(otpSchema), defaultValues: { otp: "" } });
   const submit = async (v: Form) => {
     try {
       if (mode === "register") {
         const result = await register(v.name || "User", v.email, v.password);
+        resetOtpForm({ otp: "" });
         setPendingEmail(result.email);
         return;
       } else if (mode === "login") {
@@ -39,6 +46,30 @@ export function Auth({ mode }: { mode: "login" | "register" | "forgot" }) {
       toast.error(error.response?.data?.message || error.message || fallbackMessage);
     }
   };
+  const sendResetCode = async () => {
+    try {
+      setResetSubmitting(true);
+      const { data } = await api.post("/auth/forgot-password", { email: resetEmail });
+      setResetSent(true);
+      toast.success(data.message || "Reset code sent");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Could not send reset code");
+    } finally {
+      setResetSubmitting(false);
+    }
+  };
+  const submitReset = async () => {
+    try {
+      setResetSubmitting(true);
+      await api.post("/auth/reset-password", { email: resetEmail, otp: resetOtp, password: resetPassword });
+      toast.success("Password reset successfully");
+      nav("/login");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Could not reset password");
+    } finally {
+      setResetSubmitting(false);
+    }
+  };
   const submitOtp = async (v: OtpForm) => {
     try {
       await verifyOtp(pendingEmail, v.otp);
@@ -50,7 +81,7 @@ export function Auth({ mode }: { mode: "login" | "register" | "forgot" }) {
   return <div className="grid min-h-screen place-items-center bg-[linear-gradient(115deg,#f7f3ff_0%,#ffffff_45%,#e6f8fb_100%)] px-4">
     <Card className="w-full max-w-md border-white/80 bg-white/90 shadow-[0_28px_90px_rgba(15,23,42,.12)] backdrop-blur-xl">
       <div className="mb-6 flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-primary to-cyan-500 text-white"><Package /></span><div><h1 className="text-2xl font-extrabold">{pendingEmail ? "Verify email" : mode === "register" ? "Create account" : mode === "forgot" ? "Reset password" : "Welcome back"}</h1><p className="text-sm text-slate-500">{pendingEmail || "Share Instead marketplace"}</p></div></div>
-      {pendingEmail ? <form onSubmit={handleOtpSubmit(submitOtp)} className="grid gap-4"><FormField label="Verification code" error={otpErrors.otp?.message}><Input placeholder="6-digit code" inputMode="numeric" autoComplete="one-time-code" {...otpField("otp")} /></FormField><Button type="submit" disabled={isVerifying}>{isVerifying ? "Verifying..." : "Verify account"}</Button></form> : mode === "forgot" ? <><FormField label="Email"><Input placeholder="Email address" /></FormField><Button type="button" className="mt-4 w-full">Send reset link</Button></> : <form onSubmit={handleSubmit(submit, () => toast.error("Enter a valid email and a password with at least 6 characters."))} className="grid gap-4">{mode === "register" && <FormField label="Name"><Input placeholder="Name" {...field("name")} /></FormField>}<FormField label="Email" error={errors.email?.message}><Input placeholder="Email" autoComplete="email" {...field("email")} /></FormField><FormField label="Password" error={errors.password?.message}><Input type="password" placeholder="Password" autoComplete={mode === "login" ? "current-password" : "new-password"} {...field("password")} /></FormField><Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Please wait..." : mode === "register" ? "Register" : "Login"}</Button></form>}
+      {pendingEmail ? <form key="otp-form" onSubmit={handleOtpSubmit(submitOtp)} className="grid gap-4"><FormField label="Verification code" error={otpErrors.otp?.message}><Input placeholder="6-digit code" inputMode="numeric" autoComplete="off" {...otpField("otp")} /></FormField><Button type="submit" disabled={isVerifying}>{isVerifying ? "Verifying..." : "Verify account"}</Button></form> : mode === "forgot" ? <div className="grid gap-4"><FormField label="Email"><Input placeholder="Email address" type="email" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} /></FormField>{resetSent && <><FormField label="Reset code"><Input placeholder="6-digit code" inputMode="numeric" autoComplete="off" value={resetOtp} onChange={(e) => setResetOtp(e.target.value)} /></FormField><FormField label="New password"><Input type="password" placeholder="New password" value={resetPassword} onChange={(e) => setResetPassword(e.target.value)} /></FormField></>}<Button type="button" className="w-full" disabled={resetSubmitting} onClick={resetSent ? submitReset : sendResetCode}>{resetSubmitting ? "Please wait..." : resetSent ? "Reset password" : "Send reset code"}</Button></div> : <form onSubmit={handleSubmit(submit, () => toast.error("Enter a valid email and a password with at least 6 characters."))} className="grid gap-4">{mode === "register" && <FormField label="Name"><Input placeholder="Name" autoComplete="name" {...field("name")} /></FormField>}<FormField label="Email" error={errors.email?.message}><Input placeholder="Email" autoComplete="email" {...field("email")} /></FormField><FormField label="Password" error={errors.password?.message}><Input type="password" placeholder="Password" autoComplete={mode === "login" ? "current-password" : "new-password"} {...field("password")} /></FormField><Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Please wait..." : mode === "register" ? "Register" : "Login"}</Button></form>}
       <div className="mt-5 flex justify-between text-sm font-semibold text-primary"><Link to={mode === "register" ? "/login" : "/register"}>{mode === "register" ? "Have an account?" : "Create account"}</Link><Link to="/forgot-password">Forgot password?</Link></div>
     </Card>
   </div>;

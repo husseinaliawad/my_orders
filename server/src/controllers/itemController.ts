@@ -1,5 +1,6 @@
 import type { Response } from "express";
 import { Item } from "../models/Item.js";
+import { Review } from "../models/Review.js";
 import type { AuthedRequest } from "../middleware/auth.js";
 
 const populate = [{ path: "category" }, { path: "owner", select: "name email avatar" }];
@@ -27,7 +28,8 @@ export async function getItems(req: AuthedRequest, res: Response) {
 export async function getItem(req: AuthedRequest, res: Response) {
   const item = await Item.findById(req.params.id).populate(populate);
   if (!item) return res.status(404).json({ message: "Item not found" });
-  res.json(item);
+  const reviews = await Review.find({ item: item._id }).populate("user", "name avatar").sort({ createdAt: -1 });
+  res.json({ ...item.toObject(), reviews });
 }
 
 export async function createItem(req: AuthedRequest, res: Response) {
@@ -52,4 +54,31 @@ export async function deleteItem(req: AuthedRequest, res: Response) {
   if (String(item.owner) !== String(req.user._id) && req.user.role !== "admin") return res.status(403).json({ message: "Forbidden" });
   await item.deleteOne();
   res.json({ message: "Item deleted" });
+}
+
+export async function addReview(req: AuthedRequest, res: Response) {
+  const item = await Item.findById(req.params.id);
+  if (!item) return res.status(404).json({ message: "Item not found" });
+  if (String(item.owner) === String(req.user._id)) return res.status(400).json({ message: "You cannot review your own item" });
+
+  const rating = Number(req.body.rating);
+  const comment = String(req.body.comment || "").trim();
+  if (!Number.isFinite(rating) || rating < 1 || rating > 5) return res.status(400).json({ message: "Rating must be between 1 and 5" });
+  if (comment.length < 3) return res.status(400).json({ message: "Comment is required" });
+
+  await Review.findOneAndUpdate(
+    { item: item._id, user: req.user._id },
+    { rating, comment },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+
+  const [agg] = await Review.aggregate([
+    { $match: { item: item._id } },
+    { $group: { _id: "$item", avg: { $avg: "$rating" } } }
+  ]);
+  item.rating = Number((agg?.avg || 0).toFixed(1));
+  await item.save();
+
+  const reviews = await Review.find({ item: item._id }).populate("user", "name avatar").sort({ createdAt: -1 });
+  res.status(201).json({ item: await item.populate(populate), reviews });
 }

@@ -1,4 +1,4 @@
-import { BarChart3, Home, Menu, Package, PlusCircle, ShoppingCart, UserRound, WalletCards, X } from "lucide-react";
+import { BarChart3, Heart, Home, Menu, Package, PlusCircle, ShoppingCart, UserRound, WalletCards, X } from "lucide-react";
 import { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -13,6 +13,7 @@ const publicLinks = [
 const privateLinks = [
   ["Add Item", "/add-item", PlusCircle],
   ["My Products", "/my-products", BarChart3],
+  ["Favorites", "/favorites", Heart],
   ["Requests", "/requests", WalletCards]
 ];
 

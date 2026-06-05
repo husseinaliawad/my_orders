@@ -9,7 +9,7 @@ const itemSchema = new Schema(
     pricePerDay: { type: Number, required: true, min: 0 },
     location: { type: String, required: true },
     owner: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    rating: { type: Number, default: 4.8 },
+    rating: { type: Number, default: 0 },
     isAvailable: { type: Boolean, default: true },
     status: { type: String, enum: ["pending", "approved", "rejected"], default: "pending" }
   },

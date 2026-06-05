@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { adminDeleteItem, adminItems, adminRequests, deleteUser, itemStatus, stats, toggleBlock, users } from "../controllers/adminController.js";
+import { adminDeleteItem, adminItems, adminRequests, deleteUser, getSettings, itemStatus, reports, stats, toggleBlock, updateSettings, users } from "../controllers/adminController.js";
 import { adminOnly, protect } from "../middleware/auth.js";
 
 export const adminRoutes = Router();
@@ -12,3 +12,6 @@ adminRoutes.get("/items", adminItems);
 adminRoutes.patch("/items/:id/status", itemStatus);
 adminRoutes.delete("/items/:id", adminDeleteItem);
 adminRoutes.get("/requests", adminRequests);
+adminRoutes.get("/reports", reports);
+adminRoutes.get("/settings", getSettings);
+adminRoutes.put("/settings", updateSettings);

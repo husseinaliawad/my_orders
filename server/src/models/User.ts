@@ -11,7 +11,9 @@ const userSchema = new Schema(
     isBlocked: { type: Boolean, default: false },
     isEmailVerified: { type: Boolean, default: false },
     emailOtpHash: { type: String, select: false },
-    emailOtpExpires: { type: Date, select: false }
+    emailOtpExpires: { type: Date, select: false },
+    resetOtpHash: { type: String, select: false },
+    resetOtpExpires: { type: Date, select: false }
   },
   { timestamps: true }
 );
